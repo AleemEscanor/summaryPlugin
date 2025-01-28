@@ -1,103 +1,199 @@
-const fetchApi = async (id) => {
-  try {
-    const res = await fetch(`https://post-summary.yukta.one/api/summary/${id}`);
-    const data = await res.json();
-    if (data?.summary) {
-      return data.summary;
-    } else if (data?.detail) {
-      return data.detail;
+// Function to dynamically load a CSS file
+const loadCSS = (cssUrl) => {
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = cssUrl;
+  link.type = 'text/css';
+  document.head.appendChild(link);
+};
+
+const loadGoogleFont = () => {
+  const link1 = document.createElement('link');
+  link1.rel = "preconnect"
+  link1.href="https://fonts.googleapis.com"
+  const link2 = document.createElement('link');
+  link2.rel = "preconnect"
+  link2.href="https://fonts.gstatic.com"
+  link2.crossOrigin
+
+  const link = document.createElement('link');
+  link.rel ='stylesheet';
+  link.href = "https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap";
+  document.head.appendChild(link1);
+  document.head.appendChild(link2);
+  document.head.appendChild(link);
+}
+
+// Load the CSS file
+loadGoogleFont()
+loadCSS('https://aleemescanor.github.io/summaryPlugin/summary-style.css'); // Replace with your hosted CSS file URL
+
+window.GetSummaryBanner = (id, targetSelector) => {
+  const fetchApi = async (id) => {
+    try {
+      const res = await fetch(`https://post-summary.yukta.one/api/summary/${id}`);
+      const data = await res.json();
+      if (data?.summary) {
+        return data.summary;
+      } else if (data?.detail) {
+        return data.detail;
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      return null;
     }
-  } catch (error) {
-    console.error('Error fetching data:', error);
-    return null;
+  };
+
+  const fetchAdApi = async (type) => {
+    try {
+      const res = await fetch(`https://post-summary.yukta.one/api/ad?type=${type}`);
+      const data = await res.json();
+      if (data?.ad_html) {
+        return data.ad_html;
+      }
+    } catch (error) {
+      console.error('Error fetching ad data:', error);
+      return null;
+    }
   }
-};
 
-const RenderSummaryBanner = async (bannerId) => {
-  const summary = await fetchApi(bannerId);
+  const RenderSummaryBanner = async (bannerId, targetSelector = '#my-custom-container') => {
+    const summary = await fetchApi(bannerId);
+    const adHtml = await fetchAdApi('summary')
 
-  if (summary) {
-    //container for the banner
-    const div = document.createElement('div');
-    div.classList.add('custom-data-box');
-    div.style.border = "1px solid #ccc";
-    div.style.padding = "20px";
-    div.style.margin = "20px";
-    div.style.backgroundColor = "#f4f4f4"
-    div.id = `banner-${bannerId}`; // Unique ID for each banner
+    const renderSummaryHeading = () => {
+      const headingContainer = document.createElement('div')
+      headingContainer.classList.add('heading-container')
 
-    //radio buttons for long, medium, and short
-    const radioContainer = document.createElement('div');
+      const headingBG = document.createElement('div')
+      headingBG.classList.add('heading-container-bg')
 
-    //a unique name for the radio buttons using the bannerId
-    const radioName = `summaryType-${bannerId}`;
+      const pluginName = document.createElement('div');
+      pluginName.classList.add('plugin-name');
+      pluginName.textContent = 'YM Summary';
 
-    const radioLong = document.createElement('input');
-    radioLong.type = 'radio';
-    radioLong.id = `long-${bannerId}`;
-    radioLong.name = radioName; // Unique name for each banner's radio group
-    radioLong.checked = true;  // Default to 'long'
+      const headingContent = document.createElement('div')
+      headingContent.classList.add('heading-content')
 
-    const radioMedium = document.createElement('input');
-    radioMedium.type = 'radio';
-    radioMedium.id = `medium-${bannerId}`;
-    radioMedium.name = radioName;
+      const headingText = document.createElement('div')
+      headingContent.classList.add('heading-text')
+      headingText.innerHTML = '<h3 class="summary-heading">Gift and Voucher for Premium Customers</h3><a href="https://eplus.yukta.one">View T&amp;C</a>'
 
-    const radioShort = document.createElement('input');
-    radioShort.type = 'radio';
-    radioShort.id = `short-${bannerId}`;
-    radioShort.name = radioName;
+      const headingIcon = document.createElement('div')
+      headingContent.classList.add('heading-icon')
+      headingIcon.innerHTML = '<img alt="#" data-src="https://eplus.yukta.one/wp-content/plugins/summary-quiz-ad/assets/img/Untitled-1.gif" class=" lazyloaded" src="https://eplus.yukta.one/wp-content/plugins/summary-quiz-ad/assets/img/Untitled-1.gif">'
 
-    //labels for radio buttons
-    const labelLong = document.createElement('label');
-    labelLong.setAttribute('for', `long-${bannerId}`);
-    labelLong.textContent = 'Long';
+      headingContent.appendChild(headingText)
+      headingContent.appendChild(headingIcon)
 
-    const labelMedium = document.createElement('label');
-    labelMedium.setAttribute('for', `medium-${bannerId}`);
-    labelMedium.textContent = 'Medium';
+      headingContainer.appendChild(headingBG);
+      headingContainer.appendChild(pluginName);
+      headingContainer.appendChild(headingContent);
 
-    const labelShort = document.createElement('label');
-    labelShort.setAttribute('for', `short-${bannerId}`);
-    labelShort.textContent = 'Short';
+      return headingContainer;
+    }
 
-    // Append radio buttons and labels to the radio container
-    radioContainer.appendChild(radioLong);
-    radioContainer.appendChild(labelLong);
-    radioContainer.appendChild(radioMedium);
-    radioContainer.appendChild(labelMedium);
-    radioContainer.appendChild(radioShort);
-    radioContainer.appendChild(labelShort);
+    if (summary && adHtml) {
+      //The parentContainer
+      const summaryContainer = document.createElement('div');
+      summaryContainer.classList.add('summary-container');      
 
-    //a container to display the content
-    const contentDiv = document.createElement('div');
-    contentDiv.classList.add('summary-content');
-    contentDiv.innerHTML = `<p>${summary.long}</p>`; // Default to showing 'long' content
+      // Create the banner container
+      const summaryContentWrapper = document.createElement('div');
+      summaryContentWrapper.classList.add('summary-content-wrapper');
+      summaryContentWrapper.id = `banner-${bannerId}`;
 
-    // Add the radio buttons and the content container to the main div
-    div.appendChild(radioContainer);
-    div.appendChild(contentDiv);
+      const pluginData = document.createElement('div');
+      pluginData.classList.add('plugin-data');
 
-    // Insert the new element into the document body or a specific container
-    document.body.appendChild(div);
+      const summaryContentBlock = document.createElement('div');
+      summaryContentBlock.classList.add('summary-content-block');
 
-    // Event listeners for radio buttons to update displayed content
-    radioLong.addEventListener('change', () => {
-      contentDiv.innerHTML = `<p>${summary.long}</p>`;
-    });
+      //for ad
+      const AdContent = document.createElement('div');
+      AdContent.classList.add('ad-content');
+      AdContent.innerHTML = adHtml;
 
-    radioMedium.addEventListener('change', () => {
-      contentDiv.innerHTML = `<p>${summary.medium}</p>`;
-    });
+      // Radio buttons
+      const radioContainer = document.createElement('div');
+      radioContainer.classList.add('summary-controls')
 
-    radioShort.addEventListener('change', () => {
+      const radioName = `summaryType-${bannerId}`;
+
+      const radioLong = document.createElement('input');
+      radioLong.type = 'radio';
+      radioLong.id = `long-${bannerId}`;
+      radioLong.name = radioName;
+
+      const radioMedium = document.createElement('input');
+      radioMedium.type = 'radio';
+      radioMedium.id = `medium-${bannerId}`;
+      radioMedium.name = radioName;
+
+      const radioShort = document.createElement('input');
+      radioShort.type = 'radio';
+      radioShort.id = `short-${bannerId}`;
+      radioShort.name = radioName;
+      radioShort.checked = true;
+
+      const labelLong = document.createElement('label');
+      labelLong.setAttribute('for', `long-${bannerId}`);
+      labelLong.textContent = 'Long';
+      labelLong.appendChild(radioLong)
+
+      const labelMedium = document.createElement('label');
+      labelMedium.setAttribute('for', `medium-${bannerId}`);
+      labelMedium.textContent = 'Medium';
+      labelMedium.appendChild(radioMedium)
+
+      const labelShort = document.createElement('label');
+      labelShort.setAttribute('for', `short-${bannerId}`);
+      labelShort.textContent = 'Short';
+      labelShort.appendChild(radioShort)
+
+      radioContainer.appendChild(labelShort);
+      radioContainer.appendChild(labelMedium);
+      radioContainer.appendChild(labelLong);
+
+      const contentDiv = document.createElement('div');
+      contentDiv.classList.add('summary-content');
       contentDiv.innerHTML = `<p>${summary.short}</p>`;
-    });
-  } else {
-    console.error('No summary or detail available.');
-  }
+
+      summaryContentBlock.appendChild(radioContainer);
+      summaryContentBlock.appendChild(contentDiv);
+
+      pluginData.appendChild(summaryContentBlock)
+      pluginData.appendChild(AdContent);
+
+      summaryContentWrapper.appendChild(pluginData);
+      
+      const headingContainer = renderSummaryHeading()
+      summaryContainer.appendChild(headingContainer);
+      summaryContainer.appendChild(summaryContentWrapper);
+
+      const targetElement = document.querySelector(targetSelector);
+      if (targetElement) {
+        targetElement.appendChild(summaryContainer);
+      } else {
+        console.error(`Target element "${targetSelector}" not found. Appending to body instead.`);
+        document.body.appendChild(summaryContainer);
+      }
+
+      radioLong.addEventListener('change', () => {
+        contentDiv.innerHTML = `<p>${summary.long}</p>`;
+      });
+
+      radioMedium.addEventListener('change', () => {
+        contentDiv.innerHTML = `<p>${summary.medium}</p>`;
+      });
+
+      radioShort.addEventListener('change', () => {
+        contentDiv.innerHTML = `<p>${summary.short}</p>`;
+      });
+    } else {
+      console.error('No summary or detail available.');
+    }
+  };
+
+  RenderSummaryBanner(id, targetSelector);
 };
-
-
-// Expose the RenderSummaryBanner function to the global window object
-window.GetSummaryBanner = RenderSummaryBanner;
